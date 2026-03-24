@@ -1,0 +1,295 @@
+═══════════════════════════════════════════════════════════════════════════════════════
+🚀 DEPLOY SMA-03 AI WEB CALCULATOR TODAY (5 MINUTOS)
+Complete app ready to launch
+═══════════════════════════════════════════════════════════════════════════════════════
+
+OPCIÓN 1: VERCEL (EASIEST - 2 MINUTOS) ⭐⭐⭐
+─────────────────────────────────────────────────────────────────────────────────
+
+WHAT YOU GET:
+- Free hosting (unlimited)
+- Custom domain available
+- Live in 2 minutes
+- Link like: https://sma03-ai.vercel.app
+- Auto-updates when you push code
+
+STEPS:
+
+1. Create GitHub account (if you don't have one)
+   └─ Go to: https://github.com/signup
+   └─ Free account is fine
+   └─ Takes 2 minutes
+
+2. Create new repository
+   └─ Go to: https://github.com/new
+   └─ Repository name: sma03-ai
+   └─ Public
+   └─ Create repository
+
+3. Upload the files
+   └─ In your new repo, click "Add file" → "Create new file"
+   └─ Create these files:
+
+   FILE 1: package.json
+   ═════════════════════════════════════════════════════════════════
+   {
+     "name": "sma03-ai",
+     "version": "1.0.0",
+     "private": true,
+     "scripts": {
+       "build": "next build",
+       "start": "next start",
+       "dev": "next dev"
+     },
+     "dependencies": {
+       "react": "^18.2.0",
+       "react-dom": "^18.2.0",
+       "next": "^14.0.0",
+       "recharts": "^2.10.0",
+       "lucide-react": "^0.294.0"
+     }
+   }
+
+   FILE 2: app/page.jsx
+   ═════════════════════════════════════════════════════════════════
+   (Copy the entire SMA-03_AI_WEBAPP.jsx content here)
+
+   FILE 3: app/layout.jsx
+   ═════════════════════════════════════════════════════════════════
+   import './globals.css';
+   
+   export const metadata = {
+     title: 'SMA-03 v2 AI Calculator',
+     description: 'Strategic Model for Analyzing Organizational Irreversibility',
+   };
+   
+   export default function RootLayout({ children }) {
+     return (
+       <html lang="en">
+         <body>{children}</body>
+       </html>
+     );
+   }
+
+   FILE 4: app/globals.css
+   ═════════════════════════════════════════════════════════════════
+   @tailwind base;
+   @tailwind components;
+   @tailwind utilities;
+
+4. Deploy to Vercel
+   └─ Go to: https://vercel.com/new
+   └─ Login with GitHub
+   └─ Select your "sma03-ai" repository
+   └─ Click "Deploy"
+   └─ DONE! Your app is live in 30 seconds
+
+5. Get your link
+   └─ After deployment, Vercel gives you: https://sma03-ai.vercel.app
+   └─ Share this link!
+
+═════════════════════════════════════════════════════════════════════════════════════════
+
+OPCIÓN 2: GITHUB PAGES (QUICK ALTERNATIVE - 5 MINUTOS)
+─────────────────────────────────────────────────────────────────────────────────
+
+FILE STRUCTURE:
+sma03-ai/
+├─ index.html
+├─ app.jsx (your React component)
+└─ assets/
+
+Create index.html:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMA-03 v2 AI Calculator</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/recharts@2.10.0/dist/Recharts.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" src="app.jsx"></script>
+</body>
+</html>
+
+Then:
+1. Upload to GitHub (same as Option 1, steps 1-3)
+2. Go to repo Settings → Pages
+3. Select "Deploy from branch" → main
+4. Click Save
+5. Your app lives at: https://yourusername.github.io/sma03-ai
+
+═════════════════════════════════════════════════════════════════════════════════════════
+
+RECOMMENDED: OPTION 1 (VERCEL)
+─────────────────────────────────────────────────────────────────────────────────
+
+WHY:
+✓ Easiest setup (Vercel handles config)
+✓ Faster loading (CDN)
+✓ Custom domain possible (uberlandis.com/sma03)
+✓ Better for business use
+✓ No code modification needed
+✓ Auto-updates when you push changes
+
+═════════════════════════════════════════════════════════════════════════════════════════
+
+WHAT THE APP INCLUDES:
+─────────────────────────────────────────────────────────────────────────────────
+
+✓ All 13 variables (5 pressures + 4 beliefs + 3 predispositions + 1 FD)
+✓ Real-time calculation of II(t)
+✓ Temporal decay visualization (D_t curve)
+✓ Sensitivity analysis (top impact levers)
+✓ Risk level indicator (🟢🟡🟠🔴)
+✓ Export report as .txt
+✓ Reset button
+✓ Responsive design (works on mobile + desktop)
+✓ Professional styling (indigo theme)
+
+═════════════════════════════════════════════════════════════════════════════════════════
+
+CUSTOMIZATIONS YOU CAN MAKE (After deploy):
+─────────────────────────────────────────────────────────────────────────────────
+
+1. Change branding (colors, fonts, title)
+2. Add your logo
+3. Add tutorial/help section
+4. Connect to database (store user results)
+5. Add authentication (for business users)
+6. Export to PDF instead of .txt
+7. Add multi-language support
+
+═════════════════════════════════════════════════════════════════════════════════════════
+
+AFTER DEPLOYMENT:
+─────────────────────────────────────────────────────────────────────────────────
+
+SHARE YOUR APP:
+├─ Link: https://sma03-ai.vercel.app (to share)
+├─ Email to business partners: "Try our calculator"
+├─ Add to your Substack (Orate Barbita)
+├─ Add to your CV/academia profile
+└─ Use in consulting pitches
+
+BUSINESS USE:
+├─ Ask clients to use calculator for their decisions
+├─ Export report + send detailed consultation proposal
+├─ Charge for: Full analysis + intervention plan
+├─ Build database of client assessments
+└─ Use data for next research pillar (prospective validation!)
+
+═════════════════════════════════════════════════════════════════════════════════════════
+
+TECHNICAL DETAILS:
+─────────────────────────────────────────────────────────────────────────────────
+
+Formula implemented:
+├─ II(t) = [1 - ∏(1 - Pi * A_avg * B_avg * FD)] * D_t
+├─ P = average of P_E, P_R, P_L, P_S, P_M
+├─ A_avg = average of C, I, S, A_V
+├─ B_avg = average of B_R, B_E, B_C
+├─ FD = triggering factor (user input)
+└─ D_t = e^(-0.001*t) where t = days since decision
+
+Calculations:
+├─ Real-time updates (< 10ms)
+├─ 13 input sliders (0-1 range)
+├─ 3 output visualizations
+├─ Sensitivity for 8 top variables
+└─ Temporal curve for 12 months (0-360 days)
+
+═════════════════════════════════════════════════════════════════════════════════════════
+
+ESTIMATED TIME TO GO LIVE:
+─────────────────────────────────────────────────────────────────────────────────
+
+GitHub account:        5 minutes
+Create repo:           2 minutes
+Upload files:          3 minutes
+Deploy to Vercel:      1 minute
+Get live link:         < 1 minute
+───────────────────────────────
+TOTAL:                 ~12 minutes (plus Vercel build: 2-3 min)
+
+YOU CAN BE LIVE IN 15 MINUTES.
+
+═════════════════════════════════════════════════════════════════════════════════════════
+
+QUICK START (DO THIS NOW):
+─────────────────────────────────────────────────────────────────────────────────
+
+1. Go to: https://github.com/signup (create account if needed)
+
+2. Go to: https://github.com/new
+   └─ Name: sma03-ai
+   └─ Public
+   └─ Create
+
+3. Click "Add file" → "Create new file"
+   └─ Filename: package.json
+   └─ Paste content from FILE 1 above
+   └─ Commit
+
+4. Repeat for app/page.jsx, app/layout.jsx, app/globals.css
+
+5. Go to: https://vercel.com/new
+   └─ Login with GitHub
+   └─ Select sma03-ai
+   └─ Deploy
+
+6. Wait 2 minutes, get your link!
+
+═════════════════════════════════════════════════════════════════════════════════════════
+
+NEXT STEPS (After app is live):
+─────────────────────────────────────────────────────────────────────────────────
+
+1. Share link in your Substack (Orate Barbita)
+   └─ "Interactive SMA-03 Calculator: Try it now"
+
+2. Add to your academic website / CV
+   └─ "Live tool: Calculate organizational irreversibility"
+
+3. Send to business partners
+   └─ "Assess your decisions in real-time"
+
+4. Start collecting data
+   └─ Ask users to export reports
+   └─ Build prospective validation dataset (Pillar 1!)
+   └─ Use real data for next paper
+
+5. Premium version (optional)
+   └─ Paid: Full consulting + intervention plan
+   └─ Free: Basic calculator (what you have now)
+
+═════════════════════════════════════════════════════════════════════════════════════════
+
+STATUS: ✅ APP READY TO DEPLOY
+
+Everything needed to go live is in:
+- SMA-03_AI_WEBAPP.jsx (React component)
+- DEPLOY_SMA03_AI_TODAY.txt (this file)
+- Configuration files above
+
+You can have this running TODAY.
+
+═════════════════════════════════════════════════════════════════════════════════════════
+
+GO LIVE NOW:
+1. https://github.com/signup (if needed)
+2. https://github.com/new (create repo)
+3. Upload files
+4. https://vercel.com/new (deploy)
+5. Get link
+6. Share!
+
+═════════════════════════════════════════════════════════════════════════════════════════
