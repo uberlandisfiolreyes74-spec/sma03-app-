@@ -6,6 +6,8 @@
   <title>SMA-03_AI · Evaluador de Irreversibilidad Estratégica</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- Librería para generar PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <!-- Firebase SDKs (modular) -->
   <script type="importmap">
     {
@@ -118,6 +120,9 @@
         <button @click="saveCase('pivot')" class="bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-semibold transition">🔄 Cambiar estrategia</button>
         <button @click="saveCase('abandon')" class="bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-semibold transition">❌ Abandonar</button>
       </div>
+      <button @click="generarPDF" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-semibold transition mt-2">
+        📄 Exportar informe PDF
+      </button>
       <p v-if="feedback" class="text-green-600 text-sm mt-2 text-center transition-feedback">✔ {{ feedback }}</p>
     </div>
 
@@ -345,6 +350,64 @@
           return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
         };
 
+        // --- Función para generar PDF ---
+        const generarPDF = () => {
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+
+          // Título
+          doc.setFontSize(18);
+          doc.text('Informe SMA-03_AI', 10, 15);
+
+          // Datos del usuario
+          doc.setFontSize(10);
+          let y = 25;
+          doc.text(`Usuario: ${user.value ? user.value.email : 'No autenticado'}`, 10, y);
+          y += 5;
+          doc.text(`Fecha del informe: ${new Date().toLocaleString()}`, 10, y);
+          y += 5;
+          if (decisionDate.value) {
+            doc.text(`Fecha de la decisión: ${decisionDate.value} (días transcurridos: ${daysElapsed.value})`, 10, y);
+            y += 5;
+          }
+
+          // Valores ingresados
+          doc.setFontSize(12);
+          doc.text('Valores ingresados:', 10, y);
+          y += 6;
+          doc.setFontSize(9);
+          doc.text(`Presiones: P_E=${pressures.value.P_E}, P_R=${pressures.value.P_R}, P_L=${pressures.value.P_L}, P_S=${pressures.value.P_S}, P_M=${pressures.value.P_M}`, 10, y);
+          y += 5;
+          doc.text(`Creencias: C=${beliefs.value.C}, I=${beliefs.value.I}, S=${beliefs.value.S}, A_V=${beliefs.value.A_V}`, 10, y);
+          y += 5;
+          doc.text(`Biológicos: B_R=${biologicals.value.B_R}, B_E=${biologicals.value.B_E}, B_C=${biologicals.value.B_C}`, 10, y);
+          y += 5;
+          doc.text(`Factor Desencadenante FD: ${fd.value}`, 10, y);
+          y += 5;
+
+          // Resultados
+          doc.setFontSize(12);
+          doc.text('Resultado del modelo:', 10, y);
+          y += 6;
+          doc.setFontSize(10);
+          doc.text(`Índice de Irreversibilidad (II): ${ii.value.toFixed(4)}`, 10, y);
+          y += 5;
+          doc.text(`Riesgo: ${riskLevel.value}`, 10, y);
+          y += 5;
+          doc.text(`Recomendación: ${riskDescription.value}`, 10, y);
+          y += 5;
+          doc.text(`Análisis inteligente: ${aiMessage.value}`, 10, y);
+          y += 5;
+
+          // Pie de página
+          doc.setFontSize(8);
+          doc.text('Generado por SMA-03_AI (https://tu-usuario.github.io/sma03-app/)', 10, 280);
+          doc.text('Modelo validado con 30 casos reales | Factor FD explica 79% de la irreversibilidad', 10, 285);
+
+          // Guardar PDF
+          doc.save(`SMA03_AI_Informe_${new Date().toISOString().slice(0,19)}.pdf`);
+        };
+
         // --- Observar cambios de autenticación ---
         onMounted(() => {
           onAuthStateChanged(auth, (firebaseUser) => {
@@ -367,30 +430,4 @@
           loadingCases,
           showDashboard,
           decisionDate,
-          daysElapsed,
-          dt,
-          pressures,
-          beliefs,
-          biologicals,
-          fd,
-          keyLabels,
-          beliefLabels,
-          bioLabels,
-          ii,
-          riskLevel,
-          riskColorText,
-          riskClassBorder,
-          riskDescription,
-          aiMessage,
-          feedback,
-          loginWithGoogle,
-          logout,
-          saveCase,
-          loadUserCases,
-          formatDate
-        };
-      }
-    }).mount('#app');
-  </script>
-</body>
-</html>
+          daysElap
