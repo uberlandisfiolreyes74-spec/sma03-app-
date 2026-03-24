@@ -152,31 +152,20 @@
     </div>
   </div>
 
-  <script type="importmap">
-    {
-      "imports": {
-        "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"
-      }
-    }
-  </script>
-
   <script type="module">
     import { initializeApp } from 'firebase/app';
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
     import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from 'firebase/firestore';
 
-    // 🔁 REEMPLAZA ESTOS DATOS CON LOS DE TU PROYECTO FIREBASE 🔁
+    // 🔁 Tus credenciales de Firebase (ya integradas)
     const firebaseConfig = {
-      apiKey: "TU_API_KEY",
-      authDomain: "TU_AUTH_DOMAIN",
-      projectId: "TU_PROJECT_ID",
-      storageBucket: "TU_STORAGE_BUCKET",
-      messagingSenderId: "TU_SENDER_ID",
-      appId: "TU_APP_ID"
+      apiKey: "AIzaSyAj9TwvbnLVdaL4bSJ3NuchxcRuVaCJdes",
+      authDomain: "sma03-ai.firebaseapp.com",
+      projectId: "sma03-ai",
+      storageBucket: "sma03-ai.firebasestorage.app",
+      messagingSenderId: "9478931480",
+      appId: "1:9478931480:web:0fad137003ec477d1e6f6d"
     };
-    // ------------------------------------------------------------
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -275,7 +264,6 @@
             user.value = result.user;
             feedback.value = `Sesión iniciada como ${result.user.displayName || result.user.email}`;
             setTimeout(() => feedback.value = '', 3000);
-            // Cargar sus casos automáticamente
             loadUserCases();
             showDashboard.value = true;
           } catch (err) {
@@ -321,7 +309,6 @@
             await addDoc(collection(db, 'cases'), caseData);
             feedback.value = `Caso guardado ✔ (acción: ${actionLabel})`;
             setTimeout(() => feedback.value = '', 3000);
-            // Recargar casos si el panel está visible
             if (showDashboard.value) loadUserCases();
           } catch (err) {
             console.error(err);
@@ -363,8 +350,7 @@
           onAuthStateChanged(auth, (firebaseUser) => {
             user.value = firebaseUser;
             if (firebaseUser) {
-              // Opcional: cargar casos al iniciar sesión, pero mejor no automático para evitar llamadas innecesarias
-              // El usuario puede hacer clic en "Ver mis casos"
+              // No cargamos casos automáticamente para no saturar, el usuario puede hacer clic en "Ver mis casos"
             } else {
               userCases.value = [];
               showDashboard.value = false;
@@ -407,4 +393,4 @@
     }).mount('#app');
   </script>
 </body>
-  </html>
+</html>
