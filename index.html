@@ -6,6 +6,16 @@
   <title>SMA-03_AI · Evaluador de Irreversibilidad Estratégica</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- Firebase SDKs (modular) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"
+      }
+    }
+  </script>
   <style>
     body { background: #f5f7fb; }
     input[type="range"] { accent-color: #3b82f6; }
@@ -15,10 +25,21 @@
 <body class="font-sans antialiased">
   <div id="app" class="max-w-4xl mx-auto p-6 space-y-6">
     
-    <!-- Encabezado -->
-    <div class="text-center">
-      <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">SMA-03_AI</h1>
-      <p class="text-gray-500 mt-1">Analiza la irreversibilidad de decisiones estratégicas<br>Basado en el modelo SMA-03 v2 (R²=0.79, FD predictor clave)</p>
+    <!-- Encabezado con autenticación -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">SMA-03_AI</h1>
+        <p class="text-gray-500 text-sm">Analiza la irreversibilidad de decisiones estratégicas<br>Basado en modelo SMA-03 v2 (R²=0.79, FD predictor clave)</p>
+      </div>
+      <div class="text-right">
+        <div v-if="user" class="text-sm">
+          <span class="text-gray-700">{{ user.displayName || user.email }}</span>
+          <button @click="logout" class="ml-2 text-red-500 hover:underline">Cerrar sesión</button>
+        </div>
+        <button v-else @click="loginWithGoogle" class="bg-blue-500 text-white px-4 py-1 rounded text-sm hover:bg-blue-600 transition">
+          Acceder con Google
+        </button>
+      </div>
     </div>
 
     <!-- 1. Bloque de inputs (sliders) -->
@@ -93,11 +114,37 @@
     <div class="bg-white rounded-2xl shadow-sm p-6 space-y-3">
       <p class="text-sm text-gray-600 font-medium">¿Qué piensas hacer con esta decisión?</p>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <button @click="sendOutcome('continue')" class="bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition">✅ Continuar</button>
-        <button @click="sendOutcome('pivot')" class="bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-semibold transition">🔄 Cambiar estrategia</button>
-        <button @click="sendOutcome('abandon')" class="bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-semibold transition">❌ Abandonar</button>
+        <button @click="saveCase('continue')" class="bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition">✅ Continuar</button>
+        <button @click="saveCase('pivot')" class="bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-semibold transition">🔄 Cambiar estrategia</button>
+        <button @click="saveCase('abandon')" class="bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-semibold transition">❌ Abandonar</button>
       </div>
       <p v-if="feedback" class="text-green-600 text-sm mt-2 text-center transition-feedback">✔ {{ feedback }}</p>
+    </div>
+
+    <!-- 4. Panel de casos guardados (solo si usuario autenticado) -->
+    <div v-if="user && showDashboard" class="bg-white rounded-2xl shadow-sm p-6 space-y-3">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-semibold text-gray-800">📂 Mis casos guardados</h2>
+        <button @click="showDashboard = false" class="text-sm text-gray-400 hover:text-gray-600">Ocultar</button>
+      </div>
+      <div v-if="loadingCases" class="text-center py-4 text-gray-500">Cargando...</div>
+      <div v-else>
+        <div v-if="userCases.length === 0" class="text-gray-500 text-center py-4">Aún no has guardado ningún caso. Haz clic en uno de los botones arriba.</div>
+        <div v-else class="space-y-2 max-h-96 overflow-y-auto">
+          <div v-for="c in userCases" :key="c.id" class="border-b border-gray-100 py-2 text-sm">
+            <div class="flex justify-between">
+              <span><strong>II:</strong> {{ c.ii.toFixed(3) }}</span>
+              <span><strong>Riesgo:</strong> {{ c.riskLevel }}</span>
+              <span><strong>Acción:</strong> {{ c.actionLabel }}</span>
+            </div>
+            <div class="text-gray-400 text-xs">{{ formatDate(c.createdAt) }}</div>
+          </div>
+        </div>
+        <button @click="loadUserCases" class="mt-3 text-blue-500 text-sm hover:underline">↻ Recargar</button>
+      </div>
+    </div>
+    <div v-if="user && !showDashboard" class="text-center">
+      <button @click="showDashboard = true" class="text-blue-500 text-sm hover:underline">Ver mis casos guardados</button>
     </div>
 
     <div class="text-center text-gray-400 text-xs pb-4">
@@ -105,11 +152,47 @@
     </div>
   </div>
 
-  <script>
-    const { createApp, ref, computed, watch } = Vue;
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import { initializeApp } from 'firebase/app';
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from 'firebase/firestore';
+
+    // 🔁 REEMPLAZA ESTOS DATOS CON LOS DE TU PROYECTO FIREBASE 🔁
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "TU_AUTH_DOMAIN",
+      projectId: "TU_PROJECT_ID",
+      storageBucket: "TU_STORAGE_BUCKET",
+      messagingSenderId: "TU_SENDER_ID",
+      appId: "TU_APP_ID"
+    };
+    // ------------------------------------------------------------
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    const { createApp, ref, computed, onMounted, watch } = Vue;
 
     createApp({
       setup() {
+        // --- Estados de autenticación y datos ---
+        const user = ref(null);
+        const userCases = ref([]);
+        const loadingCases = ref(false);
+        const showDashboard = ref(false);
+
         // --- Inputs reactivos ---
         const decisionDate = ref('');
         const pressures = ref({
@@ -122,6 +205,7 @@
           B_R: 0.5, B_E: 0.5, B_C: 0.5
         });
         const fd = ref(0.5);
+        const feedback = ref('');
 
         // --- Etiquetas para mostrar bonito ---
         const keyLabels = { P_E: 'Económica', P_R: 'Reputacional', P_L: 'Relacional', P_S: 'Estratégica', P_M: 'Emocional' };
@@ -184,31 +268,143 @@
           return `✅ Datos históricos muestran que decisiones con II < 0.3 se revirtieron exitosamente en un plazo de 90 días. Mantén monitoreo trimestral.`;
         });
 
-        // --- Feedback de acción ---
-        const feedback = ref('');
-        const sendOutcome = (action) => {
-          let msg = '';
-          if (action === 'continue') msg = '✔ Decisión guardada. Recibirás seguimiento en 30 días.';
-          if (action === 'pivot') msg = '🔄 Estrategia registrada. Te recomendamos un punto de control en 45 días.';
-          if (action === 'abandon') msg = '❌ Abandono registrado. Hemos anotado el aprendizaje.';
-          feedback.value = msg;
-          setTimeout(() => { feedback.value = ''; }, 3000);
-          // Aquí podrías enviar los datos a un backend si quieres recopilar casos reales
-          console.log('Usuario eligió:', action, 'II:', ii.value);
+        // --- Funciones de autenticación ---
+        const loginWithGoogle = async () => {
+          try {
+            const result = await signInWithPopup(auth, provider);
+            user.value = result.user;
+            feedback.value = `Sesión iniciada como ${result.user.displayName || result.user.email}`;
+            setTimeout(() => feedback.value = '', 3000);
+            // Cargar sus casos automáticamente
+            loadUserCases();
+            showDashboard.value = true;
+          } catch (err) {
+            console.error(err);
+            feedback.value = 'Error al iniciar sesión';
+            setTimeout(() => feedback.value = '', 3000);
+          }
         };
 
-        // Recalcular automáticamente cuando cambie cualquier input
+        const logout = async () => {
+          await signOut(auth);
+          user.value = null;
+          userCases.value = [];
+          showDashboard.value = false;
+          feedback.value = 'Sesión cerrada';
+          setTimeout(() => feedback.value = '', 3000);
+        };
+
+        // --- Guardar caso en Firestore ---
+        const saveCase = async (action) => {
+          if (!user.value) {
+            feedback.value = 'Inicia sesión para guardar tus análisis';
+            setTimeout(() => feedback.value = '', 3000);
+            return;
+          }
+          try {
+            const actionLabel = { continue: 'Continuar', pivot: 'Cambiar estrategia', abandon: 'Abandonar' }[action];
+            const caseData = {
+              userId: user.value.uid,
+              userEmail: user.value.email,
+              date: new Date().toISOString(),
+              decisionDate: decisionDate.value || null,
+              pressures: pressures.value,
+              beliefs: beliefs.value,
+              biologicals: biologicals.value,
+              fd: fd.value,
+              ii: ii.value,
+              riskLevel: riskLevel.value,
+              action: action,
+              actionLabel: actionLabel,
+              createdAt: serverTimestamp()
+            };
+            await addDoc(collection(db, 'cases'), caseData);
+            feedback.value = `Caso guardado ✔ (acción: ${actionLabel})`;
+            setTimeout(() => feedback.value = '', 3000);
+            // Recargar casos si el panel está visible
+            if (showDashboard.value) loadUserCases();
+          } catch (err) {
+            console.error(err);
+            feedback.value = 'Error al guardar. Revisa tu conexión.';
+            setTimeout(() => feedback.value = '', 3000);
+          }
+        };
+
+        // --- Cargar casos del usuario ---
+        const loadUserCases = async () => {
+          if (!user.value) return;
+          loadingCases.value = true;
+          try {
+            const q = query(
+              collection(db, 'cases'),
+              where('userId', '==', user.value.uid),
+              orderBy('createdAt', 'desc')
+            );
+            const snapshot = await getDocs(q);
+            userCases.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          } catch (err) {
+            console.error(err);
+            feedback.value = 'Error al cargar casos';
+            setTimeout(() => feedback.value = '', 3000);
+          } finally {
+            loadingCases.value = false;
+          }
+        };
+
+        // --- Helper para formato de fecha ---
+        const formatDate = (timestamp) => {
+          if (!timestamp) return 'fecha desconocida';
+          const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+          return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        };
+
+        // --- Observar cambios de autenticación ---
+        onMounted(() => {
+          onAuthStateChanged(auth, (firebaseUser) => {
+            user.value = firebaseUser;
+            if (firebaseUser) {
+              // Opcional: cargar casos al iniciar sesión, pero mejor no automático para evitar llamadas innecesarias
+              // El usuario puede hacer clic en "Ver mis casos"
+            } else {
+              userCases.value = [];
+              showDashboard.value = false;
+            }
+          });
+        });
+
+        // Forzar recálculo automático cuando cambien los inputs
         watch([pressures, beliefs, biologicals, fd, decisionDate], () => {}, { deep: true });
 
         return {
-          decisionDate, daysElapsed, dt,
-          pressures, beliefs, biologicals, fd,
-          keyLabels, beliefLabels, bioLabels,
-          ii, riskLevel, riskColorText, riskClassBorder, riskDescription,
-          aiMessage, feedback, sendOutcome
+          user,
+          userCases,
+          loadingCases,
+          showDashboard,
+          decisionDate,
+          daysElapsed,
+          dt,
+          pressures,
+          beliefs,
+          biologicals,
+          fd,
+          keyLabels,
+          beliefLabels,
+          bioLabels,
+          ii,
+          riskLevel,
+          riskColorText,
+          riskClassBorder,
+          riskDescription,
+          aiMessage,
+          feedback,
+          loginWithGoogle,
+          logout,
+          saveCase,
+          loadUserCases,
+          formatDate
         };
       }
     }).mount('#app');
   </script>
 </body>
-            </html>
+  </html>
