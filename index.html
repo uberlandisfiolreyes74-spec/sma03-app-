@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMA-03_AI · Evaluador de Irreversibilidad Estratégica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .slider-label { display: flex; justify-content: space-between; }
+        .value-badge { background: #1e293b; padding: 0.2rem 0.8rem; border-radius: 9999px; font-size: 0.85rem; color: white; }
+        input[type="range"] { accent-color: #10b981; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100">
+
+<div class="max-w-4xl mx-auto p-6 space-y-8">
+
+    <!-- Encabezado -->
+    <div class="text-center">
+        <h1 class="text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">SMA-03_AI</h1>
+        <p class="text-gray-400 mt-2">Analiza la irreversibilidad de decisiones estratégicas<br>Basado en el modelo SMA-03 v2 (R²=0.79, FD predictor clave)</p>
+    </div>
+
+    <!-- Formulario principal (secciones colapsables) -->
+    <div class="bg-gray-800 rounded-2xl p-6 space-y-6 shadow-xl">
+
+        <!-- Fecha de la decisión (para D_t) -->
+        <div>
+            <label class="block font-semibold mb-1">📅 Fecha de la decisión (para calcular tiempo transcurrido)</label>
+            <input type="date" id="decisionDate" class="w-full p-2 rounded-lg bg-gray-700 border border-gray-600 text-white">
+            <p class="text-xs text-gray-400 mt-1">Días desde la decisión: <span id="daysElapsed">0</span> → Factor temporal D_t = <span id="dtValue">1.000</span></p>
+        </div>
+
+        <!-- Presiones estructurales (5) -->
+        <div>
+            <h2 class="text-xl font-semibold mb-3">📊 Presiones estructurales (0‑1)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><div class="slider-label"><span>💰 Económica (P_E)</span><span id="pe_val" class="value-badge">0.5</span></div><input type="range" id="pe" min="0" max="1" step="0.05" value="0.5" class="w-full"></div>
+                <div><div class="slider-label"><span>📢 Reputacional (P_R)</span><span id="pr_val" class="value-badge">0.5</span></div><input type="range" id="pr" min="0" max="1" step="0.05" value="0.5" class="w-full"></div>
+                <div><div class="slider-label"><span>🤝 Relacional (P_L)</span><span id="pl_val" class="value-badge">0.5</span></div><input type="range" id="pl" min="0" max="1" step="0.05" value="0.5" class="w-full"></div>
+                <div><div class="slider-label"><span>🎯 Estratégica (P_S)</span><span id="ps_val" class="value-badge">0.5</span></div><input type="range" id="ps" min="0" max="1" step="0.05" value="0.5" class="w-full"></div>
+                <div><div class="slider-label"><span>❤️ Emocional (P_M)</span><span id="pm_val" class="value-badge">0.5</span></div><input type="range" id="pm" min="0" max="1" step="0.05" value="0.5" class="w-full"></div>
+            </div>
+        </div>
+
+        <!-- Creencias (4) -->
+        <div>
+            <h2 class="text-xl font-semibold mb-3">🧠 Sistema de creencias (1‑5)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><div class="slider-label"><span>🔍 Causal (C)</span><span id="c_val" class="value-badge">3</span></div><input type="range" id="c" min="1" max="5" step="1" value="3" class="w-full"></div>
+                <div><div class="slider-label"><span>🆔 Identidad (I)</span><span id="i_val" class="value-badge">3</span></div><input type="range" id="i" min="1" max="5" step="1" value="3" class="w-full"></div>
+                <div><div class="slider-label"><span>✨ Significado (S)</span><span id="s_val" class="value-badge">3</span></div><input type="range" id="s" min="1" max="5" step="1" value="3" class="w-full"></div>
+                <div><div class="slider-label"><span>🔁 Validación (A_V)</span><span id="av_val" class="value-badge">3</span></div><input type="range" id="av" min="1" max="5" step="1" value="3" class="w-full"></div>
+            </div>
+        </div>
+
+        <!-- Factores biológicos (3) -->
+        <div>
+            <h2 class="text-xl font-semibold mb-3">🧬 Factores biológicos (0‑1)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div><div class="slider-label"><span>⚠️ Tolerancia riesgo (B_R)</span><span id="br_val" class="value-badge">0.5</span></div><input type="range" id="br" min="0" max="1" step="0.05" value="0.5" class="w-full"></div>
+                <div><div class="slider-label"><span>😥 Sensibilidad emocional (B_E)</span><span id="be_val" class="value-badge">0.5</span></div><input type="range" id="be" min="0" max="1" step="0.05" value="0.5" class="w-full"></div>
+                <div><div class="slider-label"><span>🧠 Flexibilidad cognitiva (B_C)</span><span id="bc_val" class="value-badge">0.5</span></div><input type="range" id="bc" min="0" max="1" step="0.05" value="0.5" class="w-full"></div>
+            </div>
+        </div>
+
+        <!-- Factor Desencadenante FD -->
+        <div>
+            <div class="slider-label"><span class="font-bold text-lg">⚡ Factor Desencadenante (FD)</span><span id="fd_val" class="value-badge text-lg">0.5</span></div>
+            <input type="range" id="fd" min="0" max="1" step="0.05" value="0.5" class="w-full">
+            <p class="text-xs text-gray-400 mt-1">FD > 0.75 → riesgo muy alto; FD < 0.40 → decisiones reversibles</p>
+        </div>
+
+        <!-- Botón calcular -->
+        <button id="calcularBtn" class="w-full bg-green-600 hover:bg-green-700 py-3 rounded-xl font-bold text-lg transition">🔍 Calcular Irreversibilidad (II)</button>
+    </div>
+
+    <!-- Resultados -->
+    <div id="resultado" class="hidden bg-gray-800 rounded-2xl p-6 space-y-4"></div>
+
+    <!-- Pie de página -->
+    <div class="text-center text-gray-500 text-sm">
+        Basado en SMA-03 v2 (Fiol Reyes, 2026) | Validado con 30 casos reales | Factor FD explica 79% de la irreversibilidad
+    </div>
+</div>
+
+<script>
+    // Elementos de entrada
+    const pe = document.getElementById('pe');
+    const pr = document.getElementById('pr');
+    const pl = document.getElementById('pl');
+    const ps = document.getElementById('ps');
+    const pm = document.getElementById('pm');
+    const c = document.getElementById('c');
+    const i = document.getElementById('i');
+    const s = document.getElementById('s');
+    const av = document.getElementById('av');
+    const br = document.getElementById('br');
+    const be = document.getElementById('be');
+    const bc = document.getElementById('bc');
+    const fd = document.getElementById('fd');
+    const decisionDate = document.getElementById('decisionDate');
+    const daysSpan = document.getElementById('daysElapsed');
+    const dtSpan = document.getElementById('dtValue');
+
+    // Etiquetas de valores
+    const labels = {
+        pe: 'pe_val', pr: 'pr_val', pl: 'pl_val', ps: 'ps_val', pm: 'pm_val',
+        c: 'c_val', i: 'i_val', s: 's_val', av: 'av_val',
+        br: 'br_val', be: 'be_val', bc: 'bc_val', fd: 'fd_val'
+    };
+    function actualizarEtiquetas() {
+        document.getElementById(labels.pe).innerText = pe.value;
+        document.getElementById(labels.pr).innerText = pr.value;
+        document.getElementById(labels.pl).innerText = pl.value;
+        document.getElementById(labels.ps).innerText = ps.value;
+        document.getElementById(labels.pm).innerText = pm.value;
+        document.getElementById(labels.c).innerText = c.value;
+        document.getElementById(labels.i).innerText = i.value;
+        document.getElementById(labels.s).innerText = s.value;
+        document.getElementById(labels.av).innerText = av.value;
+        document.getElementById(labels.br).innerText = br.value;
+        document.getElementById(labels.be).innerText = be.value;
+        document.getElementById(labels.bc).innerText = bc.value;
+        document.getElementById(labels.fd).innerText = fd.value;
+    }
+    document.querySelectorAll('input[type=range], input[type=date]').forEach(el => el.addEventListener('input', actualizarEtiquetas));
+    actualizarEtiquetas();
+
+    // Calcular días transcurridos y D_t
+    function calcularDt() {
+        const fechaStr = decisionDate.value;
+        if (!fechaStr) return { days: 0, dt: 1.0 };
+        const decision = new Date(fechaStr);
+        const hoy = new Date();
+        const diffTime = hoy - decision;
+        const days = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+        const lambda = 0.001;
+        const dt = Math.exp(-lambda * days);
+        daysSpan.innerText = days;
+        dtSpan.innerText = dt.toFixed(4);
+        return { days, dt };
+    }
+    decisionDate.addEventListener('change', calcularDt);
+    calcularDt();
+
+    // Función sigmoide (no se usa directamente, pero la mantenemos)
+    // En el modelo v2, II se calcula directamente con la fórmula multiplicativa
+
+    function calcularII() {
+        // Leer valores y normalizar
+        const pE = parseFloat(pe.value);
+        const pR = parseFloat(pr.value);
+        const pL = parseFloat(pl.value);
+        const pS = parseFloat(ps.value);
+        const pM = parseFloat(pm.value);
+        const C = parseFloat(c.value) / 5;
+        const I = parseFloat(i.value) / 5;
+        const S = parseFloat(s.value) / 5;
+        const AV = parseFloat(av.value) / 5;
+        const BR = parseFloat(br.value);
+        const BE = parseFloat(be.value);
+        const BC = parseFloat(bc.value);
+        const FD = parseFloat(fd.value);
+        const { dt } = calcularDt();
+
+        const A_avg = (C + I + S + AV) / 4;
+        const B_avg = (BR + BE + BC) / 3;
+
+        // Producto de (1 - Pi * A_avg * B_avg * FD) para cada presión
+        const pressures = [pE, pR, pL, pS, pM];
+        let product = 1;
+        for (let Pi of pressures) {
+            const term = Pi * A_avg * B_avg * FD;
+            product *= (1 - term);
+        }
+        let II = (1 - product) * dt;
+        // Limitar a [0,1]
+        II = Math.min(1, Math.max(0, II));
+
+        return { II, A_avg, B_avg, FD, dt, pressures };
+    }
+
+    // Generar recomendaciones estilo IA
+    function generarExplicacionAI(II, FD, A_avg, B_avg, dt, pressures) {
+        let nivel = '';
+        let color = '';
+        if (II < 0.3) { nivel = 'Bajo'; color = 'text-green-400'; }
+        else if (II < 0.6) { nivel = 'Moderado'; color = 'text-yellow-400'; }
+        else { nivel = 'Alto'; color = 'text-red-400'; }
+
+        let factores = [];
+        if (FD > 0.7) factores.push(`⚡ FD alto (${FD.toFixed(2)}) → crisis ambiental intensa`);
+        if (A_avg > 0.7) factores.push(`🧠 Sistema de creencias fuerte (A_avg=${A_avg.toFixed(2)})`);
+        if (B_avg < 0.4) factores.push(`🧬 Baja flexibilidad biológica (B_avg=${B_avg.toFixed(2)})`);
+        const maxPressure = Math.max(...pressures);
+        if (maxPressure > 0.8) factores.push(`📈 Presiones estructurales extremas (máx=${maxPressure.toFixed(2)})`);
+        if (dt < 0.7) factores.push(`⏳ Han pasado muchos días → D_t=${dt.toFixed(3)}, la ventana de reversión se está cerrando`);
+
+        let recomendacion = '';
+        if (II < 0.3) {
+            recomendacion = 'Puedes avanzar con flexibilidad. Mantén opciones abiertas y experimenta.';
+        } else if (II < 0.6) {
+            recomendacion = 'Riesgo moderado. Establece revisiones en 30-90 días y prepárate para pivotar si es necesario.';
+        } else {
+            recomendacion = '¡Alerta de irreversibilidad! Reduce FD inmediatamente (cambia narrativa, extiende plazos). Si han pasado más de 90 días, considera un cambio en el liderazgo.';
+        }
+
+        return `
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-900 p-4 rounded-lg text-center">
+                        <div class="text-sm text-gray-400">Índice de Irreversibilidad (II)</div>
+                        <div class="text-3xl font-bold ${color}">${II.toFixed(3)}</div>
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-lg text-center">
+                        <div class="text-sm text-gray-400">Riesgo</div>
+                        <div class="text-3xl font-bold ${color}">${nivel}</div>
+                    </div>
+                </div>
+                <div class="bg-gray-900 p-4 rounded-lg">
+                    <div class="font-semibold mb-2">🔍 Análisis AI</div>
+                    ${factores.length ? `<ul class="list-disc pl-5 space-y-1 text-sm">${factores.map(f => `<li>${f}</li>`).join('')}</ul>` : '<p class="text-sm">No se detectan factores dominantes.</p>'}
+                    <p class="text-sm mt-3"><strong>Recomendación:</strong> ${recomendacion}</p>
+                    <p class="text-xs text-gray-400 mt-3">Basado en modelo SMA-03 v2 (R²=0.79, correlación FD-II=0.89) validado con 30 casos reales.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // Evento calcular
+    document.getElementById('calcularBtn').addEventListener('click', () => {
+        const { II, A_avg, B_avg, FD, dt, pressures } = calcularII();
+        const html = generarExplicacionAI(II, FD, A_avg, B_avg, dt, pressures);
+        const resultadoDiv = document.getElementById('resultado');
+        resultadoDiv.innerHTML = html;
+        resultadoDiv.classList.remove('hidden');
+        // Scroll suave al resultado
+        resultadoDiv.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Cálculo inicial (valores por defecto)
+    setTimeout(() => {
+        document.getElementById('calcularBtn').click();
+    }, 100);
+</script>
+
+</body>
+  </html>
