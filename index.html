@@ -6,9 +6,7 @@
   <title>SMA-03_AI · Evaluador de Irreversibilidad Estratégica</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <!-- Librería jsPDF con CDN alternativo para mayor fiabilidad -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <!-- Firebase SDKs con CDN (estándar) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"></script>
@@ -20,16 +18,141 @@
 </head>
 <body>
   <div id="app" class="max-w-4xl mx-auto p-6 space-y-6">
+    
+    <!-- Mensaje de estado -->
     <div v-if="appReady" class="text-center text-green-600 text-sm">✅ Aplicación cargada correctamente</div>
     <div v-else class="text-center text-red-500">⚠️ Cargando aplicación...</div>
 
-    <!-- Aquí va el mismo contenido de antes, pero lo mantengo resumido para no alargar -->
-    <!-- (Puedes copiar el contenido de la versión anterior, pero con los nombres de variables correctos) -->
-    <!-- Para que no se pierda, voy a poner la estructura completa con los datos correctos -->
+    <!-- Encabezado con autenticación -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">SMA-03_AI</h1>
+        <p class="text-gray-500 text-sm">Analiza la irreversibilidad de decisiones estratégicas<br>Basado en modelo SMA-03 v2 (R²=0.79, FD predictor clave)</p>
+      </div>
+      <div class="text-right">
+        <div v-if="user" class="text-sm">
+          <span class="text-gray-700">{{ user.displayName || user.email }}</span>
+          <button @click="logout" class="ml-2 text-red-500 hover:underline">Cerrar sesión</button>
+        </div>
+        <button v-else @click="loginWithGoogle" class="bg-blue-500 text-white px-4 py-1 rounded text-sm hover:bg-blue-600 transition">
+          Acceder con Google
+        </button>
+      </div>
+    </div>
+
+    <!-- 1. Bloque de inputs (sliders) -->
+    <div class="bg-white rounded-2xl shadow-sm p-6 space-y-5">
+      <!-- Fecha y D_t -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">📅 Fecha de la decisión</label>
+        <input type="date" v-model="decisionDate" class="w-full p-2 border border-gray-300 rounded-lg">
+        <p class="text-xs text-gray-500 mt-1">Días transcurridos: {{ daysElapsed }} · D<sub>t</sub> = {{ dt.toFixed(3) }}</p>
+      </div>
+
+      <!-- Presiones estructurales (5) -->
+      <div>
+        <h2 class="text-md font-semibold text-gray-800 mb-3">📊 Presiones estructurales (0‑1)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div v-for="(val, key) in pressures" :key="key">
+            <div class="flex justify-between text-sm text-gray-600"><span>{{ keyLabels[key] }}</span><span>{{ val }}</span></div>
+            <input type="range" min="0" max="1" step="0.05" v-model="pressures[key]" class="w-full">
+          </div>
+        </div>
+      </div>
+
+      <!-- Creencias (4) -->
+      <div>
+        <h2 class="text-md font-semibold text-gray-800 mb-3">🧠 Sistema de creencias (1‑5)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div v-for="(val, key) in beliefs" :key="key">
+            <div class="flex justify-between text-sm text-gray-600"><span>{{ beliefLabels[key] }}</span><span>{{ val }}</span></div>
+            <input type="range" min="1" max="5" step="1" v-model="beliefs[key]" class="w-full">
+          </div>
+        </div>
+      </div>
+
+      <!-- Factores biológicos (3) -->
+      <div>
+        <h2 class="text-md font-semibold text-gray-800 mb-3">🧬 Factores biológicos (0‑1)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div v-for="(val, key) in biologicals" :key="key">
+            <div class="flex justify-between text-sm text-gray-600"><span>{{ bioLabels[key] }}</span><span>{{ val }}</span></div>
+            <input type="range" min="0" max="1" step="0.05" v-model="biologicals[key]" class="w-full">
+          </div>
+        </div>
+      </div>
+
+      <!-- Factor Desencadenante FD -->
+      <div>
+        <div class="flex justify-between text-sm font-medium text-gray-700"><span>⚡ Factor Desencadenante (FD)</span><span>{{ fd }}</span></div>
+        <input type="range" min="0" max="1" step="0.05" v-model="fd" class="w-full">
+        <p class="text-xs text-gray-500">FD > 0.75 → riesgo muy alto; FD < 0.40 → decisiones reversibles</p>
+      </div>
+    </div>
+
+    <!-- 2. Bloque resultado principal (card destacada) -->
+    <div class="bg-white rounded-2xl shadow-md p-6 border-l-8" :class="riskClassBorder">
+      <h3 class="text-lg font-semibold text-gray-700">Índice de Irreversibilidad</h3>
+      <div class="text-5xl font-bold mt-2" :class="riskColorText">{{ ii.toFixed(3) }}</div>
+      <div class="mt-2">
+        <span v-if="riskLevel === 'Alto'" class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium">Riesgo alto</span>
+        <span v-else-if="riskLevel === 'Moderado'" class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-medium">Riesgo moderado</span>
+        <span v-else class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">Riesgo bajo</span>
+      </div>
+      <p class="mt-3 text-gray-600 text-sm">{{ riskDescription }}</p>
+      <div class="mt-4 p-4 bg-gray-50 rounded-xl text-sm">
+        <p class="font-semibold text-gray-700">🤖 Análisis inteligente</p>
+        <p class="mt-1 text-gray-600">{{ aiMessage }}</p>
+      </div>
+    </div>
+
+    <!-- 3. Bloque de acciones (botones grandes) -->
+    <div class="bg-white rounded-2xl shadow-sm p-6 space-y-3">
+      <p class="text-sm text-gray-600 font-medium">¿Qué piensas hacer con esta decisión?</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <button @click="saveCase('continue')" class="bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition">✅ Continuar</button>
+        <button @click="saveCase('pivot')" class="bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-semibold transition">🔄 Cambiar estrategia</button>
+        <button @click="saveCase('abandon')" class="bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-semibold transition">❌ Abandonar</button>
+      </div>
+      <button @click="generarPDF" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-semibold transition mt-2">
+        📄 Exportar informe PDF
+      </button>
+      <p v-if="feedback" class="text-green-600 text-sm mt-2 text-center transition-feedback">✔ {{ feedback }}</p>
+    </div>
+
+    <!-- 4. Panel de casos guardados (solo si usuario autenticado) -->
+    <div v-if="user && showDashboard" class="bg-white rounded-2xl shadow-sm p-6 space-y-3">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-semibold text-gray-800">📂 Mis casos guardados</h2>
+        <button @click="showDashboard = false" class="text-sm text-gray-400 hover:text-gray-600">Ocultar</button>
+      </div>
+      <div v-if="loadingCases" class="text-center py-4 text-gray-500">Cargando...</div>
+      <div v-else>
+        <div v-if="userCases.length === 0" class="text-gray-500 text-center py-4">Aún no has guardado ningún caso. Haz clic en uno de los botones arriba.</div>
+        <div v-else class="space-y-2 max-h-96 overflow-y-auto">
+          <div v-for="c in userCases" :key="c.id" class="border-b border-gray-100 py-2 text-sm">
+            <div class="flex justify-between">
+              <span><strong>II:</strong> {{ c.ii.toFixed(3) }}</span>
+              <span><strong>Riesgo:</strong> {{ c.riskLevel }}</span>
+              <span><strong>Acción:</strong> {{ c.actionLabel }}</span>
+            </div>
+            <div class="text-gray-400 text-xs">{{ formatDate(c.createdAt) }}</div>
+          </div>
+        </div>
+        <button @click="loadUserCases" class="mt-3 text-blue-500 text-sm hover:underline">↻ Recargar</button>
+      </div>
+    </div>
+    <div v-if="user && !showDashboard" class="text-center">
+      <button @click="showDashboard = true" class="text-blue-500 text-sm hover:underline">Ver mis casos guardados</button>
+    </div>
+
+    <div class="text-center text-gray-400 text-xs pb-4">
+      Basado en SMA-03 v2 (Fiol Reyes, 2026) | Validado con 30 casos reales | Factor FD explica 79% de la irreversibilidad
+    </div>
   </div>
 
   <script>
-    // --- Inicialización manual de Firebase (sin import maps) ---
+    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAj9TwvbnLVdaL4bSJ3NuchxcRuVaCJdes",
       authDomain: "sma03-ai.firebaseapp.com",
@@ -39,7 +162,7 @@
       appId: "1:9478931480:web:0fad137003ec477d1e6f6d"
     };
 
-    // Inicializar Firebase (si no está ya inicializado)
+    // Inicializar Firebase
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
@@ -47,13 +170,12 @@
     const db = firebase.firestore();
     const provider = new firebase.auth.GoogleAuthProvider();
 
-    // Esperar a que Vue esté disponible
     document.addEventListener('DOMContentLoaded', () => {
       const { createApp, ref, computed, onMounted, watch } = Vue;
 
       createApp({
         setup() {
-          const appReady = ref(true); // Indicador visual
+          const appReady = ref(true);
           const user = ref(null);
           const userCases = ref([]);
           const loadingCases = ref(false);
@@ -119,7 +241,6 @@
             return `✅ Datos históricos muestran que decisiones con II < 0.3 se revirtieron exitosamente en un plazo de 90 días. Mantén monitoreo trimestral.`;
           });
 
-          // Autenticación
           const loginWithGoogle = async () => {
             try {
               const result = await auth.signInWithPopup(provider);
@@ -143,7 +264,6 @@
             setTimeout(() => feedback.value = '', 3000);
           };
 
-          // Guardar caso
           const saveCase = async (action) => {
             if (!user.value) {
               feedback.value = 'Inicia sesión para guardar tus análisis';
@@ -178,7 +298,6 @@
             }
           };
 
-          // Cargar casos
           const loadUserCases = async () => {
             if (!user.value) return;
             loadingCases.value = true;
@@ -203,9 +322,7 @@
             return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
           };
 
-          // Generar PDF con manejo de errores visible
           const generarPDF = () => {
-            // Verificar que jsPDF esté cargado
             if (typeof window.jspdf === 'undefined') {
               feedback.value = 'Error: Librería PDF no cargada. Recarga la página.';
               setTimeout(() => feedback.value = '', 3000);
@@ -250,16 +367,9 @@
             }
           };
 
-          // Escuchar cambios de autenticación
           onMounted(() => {
             auth.onAuthStateChanged((firebaseUser) => {
               user.value = firebaseUser;
-              if (firebaseUser) {
-                // Opcional: cargar casos
-              } else {
-                userCases.value = [];
-                showDashboard.value = false;
-              }
             });
           });
 
@@ -296,8 +406,4 @@
             generarPDF
           };
         }
-      }).mount('#app');
-    });
-  </script>
-</body>
-</html>
+      }).mount('#a
